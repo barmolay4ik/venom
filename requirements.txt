@@ -1,4 +1,0 @@
-python-telegram-bot
-pip install flask
-flask
-telegram
