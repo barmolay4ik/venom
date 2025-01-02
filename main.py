@@ -39,7 +39,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         hours, remainder = divmod(remaining_time.seconds, 3600)
         minutes, _ = divmod(remainder, 60)
         await update.message.reply_text(
-            f"@{username}, НЕ АХУЕВАЙ\nНапишешь через {hours}ч {minutes}м, петух!\nНе думай что я слабак"
+            f"@{username}, НЕ АХУЕВАЙ\nНапишешь через {hours}ч {minutes}м, петух!\nНе думай что я слабак\n\nТремор походу привязался к ней"
         )
         return
 
