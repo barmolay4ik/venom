@@ -151,8 +151,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
 
-# Хэндлер команды /top
-def top(update, context):
+# Хэндлер команды /topasync def top(update, context):
     user_id = update.effective_user.id
     cursor = conn.cursor()
 
@@ -173,16 +172,17 @@ def top(update, context):
                 break
 
         if user_rank:
-            update.message.reply_text(f"Ты занимаешь {user_rank}-е место в топе!")
+            await update.message.reply_text(f"Ты занимаешь {user_rank}-е место в топе!")
         else:
-            update.message.reply_text("Ты еще не в топе. Попробуй набрать больше очков!")
+            await update.message.reply_text("Ты еще не в топе. Попробуй набрать больше очков!")
 
     except Exception as e:
-        update.message.reply_text("Произошла ошибка при получении данных топа.")
+        await update.message.reply_text("Произошла ошибка при получении данных топа.")
         print(f"Ошибка в команде 'топ': {e}")
 
     finally:
         cursor.close()
+
 
 
 
