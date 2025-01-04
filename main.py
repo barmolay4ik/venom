@@ -89,6 +89,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             # Получаем текущий рейтинг пользователя в топе
             cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
             top_users = cursor.fetchall()
+            # Проверка на позицию пользователя в топе
             position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
 
             # Если пользователь не в топ-10, выводим "10+" в позиции
@@ -149,6 +150,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.rollback()  # Откат транзакции при ошибке
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
+
 
 
 # Хэндлер команды /top
