@@ -190,8 +190,9 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(f"Произошла ошибка при получении топа: {str(e)}")
 
 # Хэндлер команды /debug для вывода всех пользователей и их данных
+# Хэндлер команды /debug для вывода всех пользователей и их данных
 async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cursor.execute("SELECT user_id, username, total, last_used FROM users")
+    cursor.execute("SELECT user_id, total, last_used, username FROM users")
     users = cursor.fetchall()
 
     if not users:
@@ -199,10 +200,13 @@ async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     debug_info = "Все пользователи:\n"
-    for user_id, username, total, last_used in users:
-        debug_info += f"ID: {user_id}, Username: {username}, Total: {total}, Last Used: {last_used}\n"
+    for user_id, total, last_used, username in users:
+        # Если username отсутствует, выводим "none"
+        username_display = username if username else "none"
+        debug_info += f"ID: {user_id}, Username: {username_display}, Total: {total}, Last Used: {last_used}\n"
 
     await update.message.reply_text(debug_info)
+
 
 # Добавление хэндлера команды /debug
 application.add_handler(CommandHandler("debug", debug))
