@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 # Хэндлер команды /venom
+# Хэндлер команды /venom
 async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     first_name = update.effective_user.first_name
@@ -100,10 +101,11 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     user_rank = user[2]  # Индекс 2 - это место пользователя
                     break
 
-            if user_rank:
-                position = user_rank
+            # Если пользователь не в топ-10, выводим "Не в топе"
+            if user_rank is None or user_rank > 10:
+                position = "Не в топе"
             else:
-                position = "test"  # Если нет в базе, то пишем "test"
+                position = user_rank
 
             # Отправляем сообщение с новым значением
             await update.message.reply_text(
@@ -153,10 +155,11 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                         user_rank = user[2]  # Индекс 2 - это место пользователя
                         break
 
-                if user_rank:
-                    position = user_rank
+                # Если пользователь не в топ-10, выводим "Не в топе"
+                if user_rank is None or user_rank > 10:
+                    position = "Не в топе"
                 else:
-                    position = "test"  # Если нет в базе, то пишем "test"
+                    position = user_rank
 
                 # Отправляем сообщение с новым значением
                 await update.message.reply_text(
@@ -170,6 +173,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.rollback()  # Откат транзакции при ошибке
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
+
 
 
 
