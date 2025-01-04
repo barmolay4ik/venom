@@ -6,6 +6,8 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from datetime import datetime, timedelta
 import random
+import asyncio
+from threading import Thread
 
 # Инициализация Flask
 app = Flask(__name__)
@@ -152,13 +154,23 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     top_list = ""
-    for i, (user_id, total) in enumerate(top_users, start=1):
-        cursor.execute("SELECT username FROM users WHERE user_id = %s", (user_id,))
+    position = None  # Для хранения позиции пользователя
+    user_id = update.effective_user.id
+
+    for i, (db_user_id, total) in enumerate(top_users, start=1):
+        cursor.execute("SELECT username FROM users WHERE user_id = %s", (db_user_id,))
         user_info = cursor.fetchone()
         username = user_info[0]  # Используем username
         top_list += f"{i}|<b>{username}</b> — {total}%\n"  # Отображаем ник в жирном шрифте
 
-    await update.message.reply_text(f"Топ веномов:\n{top_list}", parse_mode="HTML")
+        # Проверяем, если текущий пользователь в топе
+        if db_user_id == user_id:
+            position = i
+
+    if position is None or position > 10:
+        position = "10+"
+
+    await update.message.reply_text(f"Топ веномов:\n{top_list}\nТы занимаешь {position} место в топе.", parse_mode="HTML")
 
 
 # Добавление хэндлеров для команд
