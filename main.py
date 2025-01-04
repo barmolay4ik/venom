@@ -45,7 +45,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
 
     # Если у пользователя есть username, создаем ссылку
-    user_mention = f"[{username}](tg://user?id={user_id})" if username else f"Пользователь {user_id}"
+    user_mention = f"<a href='tg://user?id={user_id}'>{username}</a>" if username else f"Пользователь {user_id}"
 
     # Извлекаем данные пользователя из базы данных
     cursor.execute("SELECT total, last_used FROM users WHERE user_id = %s", (user_id,))
