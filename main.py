@@ -64,6 +64,9 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now()
     target_time = now.replace(hour=14, minute=0, second=0, microsecond=0)
 
+    # Инициализация переменной для позиции
+    position = None
+
     # Если last_used до 14:00, то сбрасываем кулдаун и разрешаем пользователю выполнить команду
     if last_used and last_used < target_time:
         # Генерация случайного числа от 1 до 5
