@@ -70,12 +70,12 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Получение текущей даты и времени в часовом поясе Киева
     now = datetime.now(KYIV_TZ)
-    today_reset_time = datetime.combine(now.date(), time(19, 0), tzinfo=KYIV_TZ)
+    today_reset_time = datetime.combine(now.date(), time(14, 0), tzinfo=KYIV_TZ)
 
     # Проверка, если текущее время до 19:00
     if now < today_reset_time:
         await update.message.reply_text(
-            f"{user_link}, ты уже играл.\nСейчас ты venom на {user_data.get(user_id, {'total': 0})['total']}%\nСледующая попытка сегодня в 19:00!",
+            f"{user_link}, ты уже играл.\nСейчас ты venom на {user_data.get(user_id, {'total': 0})['total']}%\nСледующая попытка сегодня в 14:00!",
             parse_mode=ParseMode.HTML
         )
         return
