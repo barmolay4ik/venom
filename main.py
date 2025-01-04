@@ -153,6 +153,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Хэндлер команды /top
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
+        # Получаем до 10 пользователей с наибольшими значениями
         cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC LIMIT 10")
         top_users = cursor.fetchall()
 
@@ -164,6 +165,7 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         position = None  # Для хранения позиции пользователя
         user_id = update.effective_user.id
 
+        # Формируем список топ-10 (или меньше, если их меньше)
         for i, (db_user_id, total) in enumerate(top_users, start=1):
             cursor.execute("SELECT username FROM users WHERE user_id = %s", (db_user_id,))
             user_info = cursor.fetchone()
@@ -174,13 +176,20 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if db_user_id == user_id:
                 position = i
 
+        # Если пользователя нет в топе, выводим "10+" в позиции
         if position is None or position > 10:
             position = "10+"
 
-        await update.message.reply_text(f"Топ веномов:\n{top_list}\nТы занимаешь {position} место в топе.", parse_mode="HTML")
+        # Отправляем сообщение
+        await update.message.reply_text(
+            f"Топ веномов:\n{top_list}\nТы занимаешь {position} место в топе.",
+            parse_mode="HTML"
+        )
+
     except Exception as e:
         logging.error(f"Ошибка в команде /top: {e}")
         await update.message.reply_text("Произошла ошибка при получении топа. Попробуйте снова позже.")
+
 
 
 # Добавление хэндлеров для команд
