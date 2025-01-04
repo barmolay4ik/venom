@@ -186,6 +186,7 @@ def top(update, context):
 
 
 
+
 # Хэндлер команды /debug для вывода всех пользователей и их данных
 # Хэндлер команды /debug для вывода всех пользователей и их данных
 async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
