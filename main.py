@@ -60,11 +60,11 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     else:
         total, last_used = result
 
-    # Получаем текущее время и время, когда пользователь может выполнить команду (19:00 текущего дня)
+    # Получаем текущее время и время, когда пользователь может выполнить команду (14:00 текущего дня)
     now = datetime.now()
     target_time = now.replace(hour=14, minute=0, second=0, microsecond=0)
 
-    # Если last_used до 19:00, то сбрасываем кулдаун и разрешаем пользователю выполнить команду
+    # Если last_used до 14:00, то сбрасываем кулдаун и разрешаем пользователю выполнить команду
     if last_used and last_used < target_time:
         # Генерация случайного числа от 1 до 5
         added_value = random.randint(1, 5)
@@ -78,22 +78,29 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """, (new_total, now, user_id))
         conn.commit()
 
-        # Проверка на достижение 100%
-        if new_total >= 100:
-            await update.message.reply_text(f"{user_mention}, ТЫ VENOM!", parse_mode="HTML")
-        else:
-            await update.message.reply_text(
-                f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!",
-                parse_mode="HTML"
-            )
+        # Получаем текущий рейтинг пользователя в топе
+        cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
+        top_users = cursor.fetchall()
+        position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
+
+        # Отправляем сообщение с новым значением
+        await update.message.reply_text(
+            f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value}).\n"
+            f"Сейчас ты venom на {new_total}%. \n"
+            f"Ты занимаешь {position} место в топе.\n"
+            "Следующая попытка завтра!",
+            parse_mode="HTML"
+        )
     else:
-        # Если последняя попытка была после 19:00, проверяем, прошло ли 24 часа
-        if last_used and now - last_used < timedelta(hours=24):
-            remaining_time = timedelta(hours=24) - (now - last_used)
+        # Если последняя попытка была после 14:00, проверяем, прошло ли 14 часов
+        if last_used and now - last_used < timedelta(hours=14):
+            remaining_time = timedelta(hours=14) - (now - last_used)
             hours, remainder = divmod(remaining_time.seconds, 3600)
             minutes, _ = divmod(remainder, 60)
             await update.message.reply_text(
-                f"{user_mention}, ты уже играл.\nСейчас ты venom на {total}%\nСледующая попытка завтра!",
+                f"{user_mention}, ты уже играл.\nСейчас ты venom на {total}%.\n"
+                f"Ты занимаешь {position} место в топе.\n"
+                "Следующая попытка завтра!",
                 parse_mode="HTML"
             )
         else:
@@ -109,18 +116,43 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             """, (new_total, now, user_id))
             conn.commit()
 
-            # Проверка на достижение 100%
-            if new_total >= 100:
-                await update.message.reply_text(f"{user_mention}, ТЫ VENOM!", parse_mode="HTML")
-            else:
-                await update.message.reply_text(
-                    f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!",
-                    parse_mode="HTML"
-                )
+            # Получаем текущий рейтинг пользователя в топе
+            cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
+            top_users = cursor.fetchall()
+            position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
+
+            # Отправляем сообщение с новым значением
+            await update.message.reply_text(
+                f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value}).\n"
+                f"Сейчас ты venom на {new_total}%. \n"
+                f"Ты занимаешь {position} место в топе.\n"
+                "Следующая попытка завтра!",
+                parse_mode="HTML"
+            )
 
 
-# Добавление хэндлера для команды /venom
+# Хэндлер команды /top
+async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC LIMIT 10")
+    top_users = cursor.fetchall()
+
+    if not top_users:
+        await update.message.reply_text("Топ веномов пуст.")
+        return
+
+    top_list = ""
+    for i, (user_id, total) in enumerate(top_users, start=1):
+        cursor.execute("SELECT username FROM users WHERE user_id = %s", (user_id,))
+        user_info = cursor.fetchone()
+        username = user_info[0]  # Используем username
+        top_list += f"{i}|<b>{username}</b> — {total}%\n"  # Отображаем ник в жирном шрифте
+
+    await update.message.reply_text(f"Топ веномов:\n{top_list}", parse_mode="HTML")
+
+
+# Добавление хэндлеров для команд
 application.add_handler(CommandHandler("venom", venom))
+application.add_handler(CommandHandler("top", top))
 
 @app.route("/")
 def home():
