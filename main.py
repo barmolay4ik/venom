@@ -1,3 +1,47 @@
+import os
+import logging
+import psycopg2
+from flask import Flask
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from datetime import datetime, timedelta
+import random
+import asyncio
+from threading import Thread
+
+# Инициализация Flask
+app = Flask(__name__)
+
+# Логгер для Telegram API
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+# Ваш токен Telegram-бота
+TOKEN = "7898615918:AAFZwC8uNnlZD8rQ5n-npbP-PAD9U4KdK8Y"
+
+# Инициализация Telegram бота
+application = ApplicationBuilder().token(TOKEN).build()
+
+# Получаем строку подключения к базе данных
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+# Подключаемся к базе данных PostgreSQL
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+cursor = conn.cursor()
+
+# Создаем таблицу для хранения данных пользователей, если она не существует
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    user_id BIGINT PRIMARY KEY,
+    username TEXT,
+    total INTEGER,
+    last_used TIMESTAMP
+)
+""")
+conn.commit()
+
 # Хэндлер команды /venom
 async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
@@ -105,5 +149,82 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.rollback()  # Откат транзакции при ошибке
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
+
+# Хэндлер команды /top
+async def top(update, context):
+    user_id = update.effective_user.id
+    cursor = conn.cursor()
+
+    # Получаем данные о пользователе и его месте в топе
+    try:
+        cursor.execute("""
+            SELECT user_id, total, 
+                RANK() OVER (ORDER BY total DESC) AS rank
+            FROM users
+        """)
+        users_data = cursor.fetchall()
+
+        # Находим место пользователя
+        user_rank = None
+        for user in users_data:
+            if user[0] == user_id:
+                user_rank = user[2]  # Индекс 2 - это место пользователя
+                break
+
+        if user_rank:
+            await update.message.reply_text(f"Ты занимаешь {user_rank}-е место в топе!")
+        else:
+            await update.message.reply_text("Ты еще не в топе. Попробуй набрать больше очков!")
+
+    except Exception as e:
+        await update.message.reply_text("Произошла ошибка при получении данных топа.")
+        print(f"Ошибка в команде 'топ': {e}")
+
+    finally:
+        cursor.close()
+
+
+# Хэндлер команды /debug для вывода всех пользователей и их данных
+async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cursor.execute("SELECT user_id, total, last_used, username FROM users")
+    users = cursor.fetchall()
+
+    if not users:
+        await update.message.reply_text("Нет пользователей в базе данных.")
+        return
+
+    debug_info = "Все пользователи:\n"
+    for user_id, total, last_used, username in users:
+        # Если username отсутствует, выводим "none"
+        username_display = username if username else "none"
+        debug_info += f"ID: {user_id}, Username: {username_display}, Total: {total}, Last Used: {last_used}\n"
+
+    await update.message.reply_text(debug_info)
+
+
+# Добавление хэндлера команды /debug
+application.add_handler(CommandHandler("debug", debug))
+
+# Добавление хэндлеров для команд
+application.add_handler(CommandHandler("venom", venom))
+application.add_handler(CommandHandler("top", top))
+
+@app.route("/")
+def home():
+    return "Бот работает!"
+
+def run_telegram_bot():
+    application.run_polling(drop_pending_updates=True)
+
+if __name__ == "__main__":
+    from threading import Thread
+
+    # Запуск Flask в отдельном потоке
+    thread = Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000))))
+    thread.start()
+
+    # Запуск Telegram бота
+    run_telegram_bot()
+
 
 
