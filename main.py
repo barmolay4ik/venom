@@ -89,7 +89,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.reply_text(
                 f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value}).\n"
                 f"Сейчас ты venom на {new_total}%. \n"
-                f"Напиши /top чтобы узнать свой рейтинг.\n"
+                f"Узнай своё место в топе - /top.\n"
                 "Следующая попытка завтра!",
                 parse_mode="HTML"
             )
