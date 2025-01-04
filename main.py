@@ -32,28 +32,6 @@ conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 cursor = conn.cursor()
 
 import psycopg2
-
-# Подключение к базе данных
-connection = psycopg2.connect(
-    dbname="d7j7ldib46lfr0",
-    user="ucokpi1n4n22h",
-    password="p1273bd4d2d91658a0b4215543d62f44b8e912b5490ce10bad8b03507e39f367",
-    host="cah8ha8ra8h8i7.cluster-czz5s0kz4scl.eu-west-1.rds.amazonaws.com",
-    port="5432"
-)
-
-# Выполнение SQL-запроса для добавления колонки
-try:
-    cursor = connection.cursor()
-    cursor.execute("ALTER TABLE users ADD COLUMN username TEXT;")
-    connection.commit()
-    print("Колонка username успешно добавлена.")
-except Exception as e:
-    print(f"Ошибка: {e}")
-finally:
-    cursor.close()
-    connection.close()
-
 # Создаем таблицу для хранения данных пользователей, если она не существует
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
