@@ -62,7 +62,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Проверка, если текущее время до 19:00
     if now < today_reset_time:
         await update.message.reply_text(
-            f"{user_link}, ты уже играл.\nСейчас ты venom на {user_data.get(user_id, {'total': 0})['total']}%\nСледующая попытка сегодня в 19:00!",
+            f"{user_link}, ты уже играл.\nСейчас ты venom на {user_data.get(user_id, {'total': 0})['total']}%\nСледующая попытка сегодня в 14:00!",
             parse_mode=ParseMode.HTML
         )
         return
