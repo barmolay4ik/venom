@@ -64,6 +64,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now()
     target_time = now.replace(hour=14, minute=0, second=0, microsecond=0)
 
+    # Если последняя попытка была позже 19:00, разрешаем повторную попытку
     if last_used and now < target_time:
         remaining_time = target_time - now
         hours, remainder = divmod(remaining_time.seconds, 3600)
