@@ -152,43 +152,38 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
 
 # Хэндлер команды /top
-async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def top(update, context):
     user_id = update.effective_user.id
-    user_mention = f"<a href='tg://user?id={user_id}'>Твой профиль</a>"
-    
+    cursor = conn.cursor()
+
+    # Получаем данные о пользователе и его месте в топе
     try:
-        # Извлекаем топ 10 пользователей с их username и total
-        cursor.execute("SELECT user_id, username, total FROM users ORDER BY total DESC LIMIT 10")
-        top_users = cursor.fetchall()
+        cursor.execute("""
+            SELECT user_id, total, 
+                RANK() OVER (ORDER BY total DESC) AS rank
+            FROM users
+        """)
+        users_data = cursor.fetchall()
 
-        # Формируем список топа с username и процентами
-        top_list = "\n".join([f"{i+1}|**{user_mention}** — {total}%" for i, (_, user_mention, total) in enumerate(top_users)])
+        # Находим место пользователя
+        user_rank = None
+        for user in users_data:
+            if user[0] == user_id:
+                user_rank = user[2]  # Индекс 2 - это место пользователя
+                break
 
-        await update.message.reply_text(f"Топ веномов:\n\n{top_list}", parse_mode="HTML")
-
-        # Позиция пользователя в топе
-        cursor.execute("SELECT total FROM users WHERE user_id = %s", (user_id,))
-        user_info = cursor.fetchone()
-        
-        if user_info:
-            user_total = user_info[0]
-            cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
-            top_users = cursor.fetchall()
-
-            position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
-
-            # Если пользователь не в топ-10, выводим, что он в 10+ месте
-            if position is None or position > 10:
-                position = "10+"
-
-            await update.message.reply_text(
-                f"{user_mention}, твое место в топе: {position}.\nСейчас твой процент: {user_total}%.",
-                parse_mode="HTML"
-            )
+        if user_rank:
+            update.message.reply_text(f"Ты занимаешь {user_rank}-е место в топе!")
         else:
-            await update.message.reply_text(f"{user_mention}, ты не зарегистрирован в системе. Используй команду /venom, чтобы начать!")
+            update.message.reply_text("Ты еще не в топе. Попробуй набрать больше очков!")
+
     except Exception as e:
-        await update.message.reply_text(f"Произошла ошибка при получении топа: {str(e)}")
+        update.message.reply_text("Произошла ошибка при получении данных топа.")
+        print(f"Ошибка в команде 'топ': {e}")
+
+    finally:
+        cursor.close()
+
 
 # Хэндлер команды /debug для вывода всех пользователей и их данных
 # Хэндлер команды /debug для вывода всех пользователей и их данных
