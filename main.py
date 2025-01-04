@@ -60,41 +60,64 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     else:
         total, last_used = result
 
-    # Проверка на доступность попытки (в 19:00 по Киеву)
+    # Получаем текущее время и время, когда пользователь может выполнить команду (19:00 текущего дня)
     now = datetime.now()
     target_time = now.replace(hour=14, minute=0, second=0, microsecond=0)
 
-    # Если последняя попытка была позже 19:00, разрешаем повторную попытку
-    if last_used and now < target_time:
-        remaining_time = target_time - now
-        hours, remainder = divmod(remaining_time.seconds, 3600)
-        minutes, _ = divmod(remainder, 60)
-        await update.message.reply_text(
-            f"{user_mention}, ты уже играл.\nСейчас ты venom на {total}%\nСледующая попытка завтра!",
-            parse_mode="HTML"
-        )
-        return
+    # Если last_used до 19:00, то сбрасываем кулдаун и разрешаем пользователю выполнить команду
+    if last_used and last_used < target_time:
+        # Генерация случайного числа от 1 до 5
+        added_value = random.randint(1, 5)
 
-    # Генерация случайного числа от 1 до 5
-    added_value = random.randint(1, 5)
+        # Обновление значений пользователя в базе данных
+        new_total = total + added_value
+        cursor.execute("""
+            UPDATE users 
+            SET total = %s, last_used = %s 
+            WHERE user_id = %s
+        """, (new_total, now, user_id))
+        conn.commit()
 
-    # Обновление значений пользователя в базе данных
-    new_total = total + added_value
-    cursor.execute("""
-        UPDATE users 
-        SET total = %s, last_used = %s 
-        WHERE user_id = %s
-    """, (new_total, now, user_id))
-    conn.commit()
-
-    # Проверка на достижение 100%
-    if new_total >= 100:
-        await update.message.reply_text(f"{user_mention}, ТЫ VENOM!", parse_mode="HTML")
+        # Проверка на достижение 100%
+        if new_total >= 100:
+            await update.message.reply_text(f"{user_mention}, ТЫ VENOM!", parse_mode="HTML")
+        else:
+            await update.message.reply_text(
+                f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!",
+                parse_mode="HTML"
+            )
     else:
-        await update.message.reply_text(
-            f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!",
-            parse_mode="HTML"
-        )
+        # Если последняя попытка была после 19:00, проверяем, прошло ли 24 часа
+        if last_used and now - last_used < timedelta(hours=24):
+            remaining_time = timedelta(hours=24) - (now - last_used)
+            hours, remainder = divmod(remaining_time.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            await update.message.reply_text(
+                f"{user_mention}, ты уже играл.\nСейчас ты venom на {total}%\nСледующая попытка завтра!",
+                parse_mode="HTML"
+            )
+        else:
+            # Генерация случайного числа от 1 до 5
+            added_value = random.randint(1, 5)
+
+            # Обновление значений пользователя в базе данных
+            new_total = total + added_value
+            cursor.execute("""
+                UPDATE users 
+                SET total = %s, last_used = %s 
+                WHERE user_id = %s
+            """, (new_total, now, user_id))
+            conn.commit()
+
+            # Проверка на достижение 100%
+            if new_total >= 100:
+                await update.message.reply_text(f"{user_mention}, ТЫ VENOM!", parse_mode="HTML")
+            else:
+                await update.message.reply_text(
+                    f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!",
+                    parse_mode="HTML"
+                )
+
 
 # Добавление хэндлера для команды /venom
 application.add_handler(CommandHandler("venom", venom))
