@@ -31,7 +31,6 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 cursor = conn.cursor()
 
-import psycopg2
 # Создаем таблицу для хранения данных пользователей, если она не существует
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
@@ -151,7 +150,9 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
 
-# Хэндлер команды /topasync def top(update, context):
+
+# Хэндлер команды /top
+async def top(update, context):
     user_id = update.effective_user.id
     cursor = conn.cursor()
 
@@ -184,31 +185,6 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         cursor.close()
 
 
-
-
-
-# Хэндлер команды /debug для вывода всех пользователей и их данных
-# Хэндлер команды /debug для вывода всех пользователей и их данных
-async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cursor.execute("SELECT user_id, total, last_used, username FROM users")
-    users = cursor.fetchall()
-
-    if not users:
-        await update.message.reply_text("Нет пользователей в базе данных.")
-        return
-
-    debug_info = "Все пользователи:\n"
-    for user_id, total, last_used, username in users:
-        # Если username отсутствует, выводим "none"
-        username_display = username if username else "none"
-        debug_info += f"ID: {user_id}, Username: {username_display}, Total: {total}, Last Used: {last_used}\n"
-
-    await update.message.reply_text(debug_info)
-
-
-# Добавление хэндлера команды /debug
-application.add_handler(CommandHandler("debug", debug))
-
 # Добавление хэндлеров для команд
 application.add_handler(CommandHandler("venom", venom))
 application.add_handler(CommandHandler("top", top))
@@ -229,3 +205,4 @@ if __name__ == "__main__":
 
     # Запуск Telegram бота
     run_telegram_bot()
+
