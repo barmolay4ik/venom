@@ -86,6 +86,10 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         top_users = cursor.fetchall()
         position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
 
+        # Если пользователь не в топ-10, выводим "10+" в позиции
+        if position is None or position > 10:
+            position = "10+"
+
         # Отправляем сообщение с новым значением
         await update.message.reply_text(
             f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value}).\n"
@@ -123,6 +127,10 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
             top_users = cursor.fetchall()
             position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
+
+            # Если пользователь не в топ-10, выводим "10+" в позиции
+            if position is None or position > 10:
+                position = "10+"
 
             # Отправляем сообщение с новым значением
             await update.message.reply_text(
