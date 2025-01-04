@@ -41,11 +41,12 @@ conn.commit()
 
 # Хэндлер команды /venom
 async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    username = update.effective_user.username
     user_id = update.effective_user.id
+    first_name = update.effective_user.first_name
+    username = update.effective_user.username
 
-    # Если у пользователя есть username, создаем ссылку
-    user_mention = f"<a href='tg://user?id={user_id}'>{username}</a>" if username else f"Пользователь {user_id}"
+    # Используем first_name, если оно есть, иначе используем username
+    user_mention = f"<a href='tg://user?id={user_id}'>{first_name}</a>" if first_name else f"<a href='tg://user?id={user_id}'>{username}</a>"
 
     # Извлекаем данные пользователя из базы данных
     cursor.execute("SELECT total, last_used FROM users WHERE user_id = %s", (user_id,))
