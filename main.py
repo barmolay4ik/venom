@@ -150,48 +150,53 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # Хэндлер команды /top
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.effective_user.id
+    user_mention = f"<a href='tg://user?id={user_id}'>Твой профиль</a>"
+    
     try:
-        # Получаем до 10 пользователей с наибольшими значениями
+        # Получаем всех пользователей из базы данных и сортируем по total (в убывающем порядке)
         cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC LIMIT 10")
         top_users = cursor.fetchall()
 
-        if not top_users:
-            await update.message.reply_text("Топ веномов пуст.")
-            return
+        # Если в топе меньше 10 пользователей, выводим всех
+        if len(top_users) < 10:
+            await update.message.reply_text(
+                f"Топ {len(top_users)} пользователей:\n\n" +
+                "\n".join([f"{i+1}. <a href='tg://user?id={user_id}'>{user_id}</a>: {total}%" for i, (user_id, total) in enumerate(top_users)]),
+                parse_mode="HTML"
+            )
+        else:
+            # Если пользователей больше или равно 10, выводим только 10
+            await update.message.reply_text(
+                "Топ 10 пользователей:\n\n" +
+                "\n".join([f"{i+1}. <a href='tg://user?id={user_id}'>{user_id}</a>: {total}%" for i, (user_id, total) in enumerate(top_users)]),
+                parse_mode="HTML"
+            )
 
-        top_list = ""
-        position = None  # Для хранения позиции пользователя
-        user_id = update.effective_user.id
+        # Позиция пользователя в топе
+        cursor.execute("SELECT total FROM users WHERE user_id = %s", (user_id,))
+        user_total = cursor.fetchone()
+        
+        if user_total:
+            user_total = user_total[0]
+            cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
+            top_users = cursor.fetchall()
 
-        # Формируем список топ-10 (или меньше, если их меньше)
-        for i, (db_user_id, total) in enumerate(top_users, start=1):
-            cursor.execute("SELECT username FROM users WHERE user_id = %s", (db_user_id,))
-            user_info = cursor.fetchone()
+            position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
 
-            # Проверка, существует ли username
-            if user_info:
-                username = user_info[0]  # Используем username
-                top_list += f"{i}|<b>{username}</b> — {total}%\n"  # Отображаем ник в жирном шрифте
+            # Если пользователь не в топ-10, выводим, что он в 10+ месте
+            if position is None or position > 10:
+                position = "10+"
 
-                # Проверяем, если текущий пользователь в топе
-                if db_user_id == user_id:
-                    position = i
-            else:
-                logging.warning(f"Пользователь с ID {db_user_id} не найден в базе данных.")
-
-        # Если пользователя нет в топе, выводим "10+" в позиции
-        if position is None or position > 10:
-            position = "10+"
-
-        # Отправляем сообщение
-        await update.message.reply_text(
-            f"Топ веномов:\n{top_list}\nТы занимаешь {position} место в топе.",
-            parse_mode="HTML"
-        )
-
+            await update.message.reply_text(
+                f"{user_mention}, твое место в топе: {position}.\nСейчас твой процент: {user_total}%.",
+                parse_mode="HTML"
+            )
+        else:
+            await update.message.reply_text(f"{user_mention}, ты не зарегистрирован в системе. Используй команду /venom, чтобы начать!")
     except Exception as e:
-        logging.error(f"Ошибка в команде /top: {e}")
-        await update.message.reply_text("Произошла ошибка при получении топа. Попробуйте снова позже.")
+        await update.message.reply_text(f"Произошла ошибка при получении топа: {str(e)}")
+
 
 
 # Хэндлер команды /debug для вывода всех пользователей и их данных
