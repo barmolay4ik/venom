@@ -85,16 +85,25 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             """, (new_total, now, user_id))
             conn.commit()
 
-            # Получаем все данные пользователей и сортируем по total в убывающем порядке
-            cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
-            top_users = cursor.fetchall()
+            # Получаем текущий рейтинг пользователя в топе
+            cursor.execute("""
+                SELECT user_id, total, 
+                    RANK() OVER (ORDER BY total DESC) AS rank
+                FROM users
+            """)
+            users_data = cursor.fetchall()
 
-            # Определяем позицию пользователя
-            position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
+            # Находим место пользователя
+            user_rank = None
+            for user in users_data:
+                if user[0] == user_id:
+                    user_rank = user[2]  # Индекс 2 - это место пользователя
+                    break
 
-            # Если пользователь не в топ-10, выводим "10+" в позиции
-            if position is None or position > 10:
-                position = "test"  # Заменено на "test"
+            if user_rank:
+                position = user_rank
+            else:
+                position = "test"  # Если нет в базе, то пишем "test"
 
             # Отправляем сообщение с новым значением
             await update.message.reply_text(
@@ -113,7 +122,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 await update.message.reply_text(
                     f"{user_mention}, ты уже играл.\nСейчас ты venom на {total}%.\n"
                     f"Ты занимаешь {position} место в топе.\n"
-                    "Следующая попытка завтра!11",
+                    "Следующая попытка завтра!",
                     parse_mode="HTML"
                 )
             else:
@@ -129,16 +138,25 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 """, (new_total, now, user_id))
                 conn.commit()
 
-                # Получаем все данные пользователей и сортируем по total в убывающем порядке
-                cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
-                top_users = cursor.fetchall()
+                # Получаем текущий рейтинг пользователя в топе
+                cursor.execute("""
+                    SELECT user_id, total, 
+                        RANK() OVER (ORDER BY total DESC) AS rank
+                    FROM users
+                """)
+                users_data = cursor.fetchall()
 
-                # Определяем позицию пользователя
-                position = next((i+1 for i, (uid, _) in enumerate(top_users) if uid == user_id), None)
+                # Находим место пользователя
+                user_rank = None
+                for user in users_data:
+                    if user[0] == user_id:
+                        user_rank = user[2]  # Индекс 2 - это место пользователя
+                        break
 
-                # Если пользователь не в топ-10, выводим "10+" в позиции
-                if position is None or position > 10:
-                    position = "test"  # Заменено на "test"
+                if user_rank:
+                    position = user_rank
+                else:
+                    position = "test"  # Если нет в базе, то пишем "test"
 
                 # Отправляем сообщение с новым значением
                 await update.message.reply_text(
@@ -152,6 +170,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.rollback()  # Откат транзакции при ошибке
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
+
 
 
 
