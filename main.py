@@ -35,6 +35,7 @@ cursor = conn.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT PRIMARY KEY,
+    username TEXT,
     total INTEGER,
     last_used TIMESTAMP
 )
@@ -57,7 +58,8 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         # Если пользователя нет в базе данных, добавляем его
         if result is None:
-            cursor.execute("INSERT INTO users (user_id, total, last_used) VALUES (%s, 0, %s)", (user_id, datetime.now()))
+            cursor.execute("INSERT INTO users (user_id, username, total, last_used) VALUES (%s, %s, 0, %s)", 
+                           (user_id, username, datetime.now()))
             conn.commit()
             total, last_used = 0, None
         else:
@@ -154,24 +156,14 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_mention = f"<a href='tg://user?id={user_id}'>Твой профиль</a>"
     
     try:
-        # Проверка на наличие столбца username в таблице, если его нет, используем только user_id и total
-        cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC LIMIT 10")
+        # Извлекаем топ 10 пользователей с их username и total
+        cursor.execute("SELECT user_id, username, total FROM users ORDER BY total DESC LIMIT 10")
         top_users = cursor.fetchall()
 
-        # Если в топе меньше 10 пользователей, выводим всех
-        if len(top_users) < 10:
-            await update.message.reply_text(
-                "Топ веномов:\n\n" +
-                "\n".join([f"{i+1}|**{user_id}** — {total}%" for i, (user_id, total) in enumerate(top_users)]),
-                parse_mode="HTML"
-            )
-        else:
-            # Если пользователей больше или равно 10, выводим только 10
-            await update.message.reply_text(
-                "Топ веномов:\n\n" +
-                "\n".join([f"{i+1}|**{user_id}** — {total}%" for i, (user_id, total) in enumerate(top_users)]),
-                parse_mode="HTML"
-            )
+        # Формируем список топа с username и процентами
+        top_list = "\n".join([f"{i+1}|**{user_mention}** — {total}%" for i, (_, user_mention, total) in enumerate(top_users)])
+
+        await update.message.reply_text(f"Топ веномов:\n\n{top_list}", parse_mode="HTML")
 
         # Позиция пользователя в топе
         cursor.execute("SELECT total FROM users WHERE user_id = %s", (user_id,))
@@ -197,13 +189,9 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при получении топа: {str(e)}")
 
-
-
-
-
 # Хэндлер команды /debug для вывода всех пользователей и их данных
 async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cursor.execute("SELECT user_id, total, last_used FROM users")
+    cursor.execute("SELECT user_id, username, total, last_used FROM users")
     users = cursor.fetchall()
 
     if not users:
@@ -211,16 +199,13 @@ async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     debug_info = "Все пользователи:\n"
-    for user_id, total, last_used in users:
-        debug_info += f"ID: {user_id}, Total: {total}, Last Used: {last_used}\n"
+    for user_id, username, total, last_used in users:
+        debug_info += f"ID: {user_id}, Username: {username}, Total: {total}, Last Used: {last_used}\n"
 
     await update.message.reply_text(debug_info)
 
 # Добавление хэндлера команды /debug
 application.add_handler(CommandHandler("debug", debug))
-
-
-
 
 # Добавление хэндлеров для команд
 application.add_handler(CommandHandler("venom", venom))
