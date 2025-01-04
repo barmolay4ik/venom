@@ -43,7 +43,9 @@ conn.commit()
 async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     username = update.effective_user.username
     user_id = update.effective_user.id
-    user_profile_url = f"https://t.me/{username}" if username else None
+
+    # Если у пользователя есть username, создаем ссылку
+    user_mention = f"[{username}](tg://user?id={user_id})" if username else f"Пользователь {user_id}"
 
     # Извлекаем данные пользователя из базы данных
     cursor.execute("SELECT total, last_used FROM users WHERE user_id = %s", (user_id,))
@@ -66,7 +68,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         hours, remainder = divmod(remaining_time.seconds, 3600)
         minutes, _ = divmod(remainder, 60)
         await update.message.reply_text(
-            f"{user_profile_url or 'Пользователь'} ты уже играл.\nСейчас ты venom на {total}%\nСледующая попытка завтра!"
+            f"{user_mention} ты уже играл.\nСейчас ты venom на {total}%\nСледующая попытка завтра!"
         )
         return
 
@@ -84,10 +86,10 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Проверка на достижение 100%
     if new_total >= 100:
-        await update.message.reply_text(f"{user_profile_url or 'Пользователь'}, ТЫ VENOM!")
+        await update.message.reply_text(f"{user_mention}, ТЫ VENOM!")
     else:
         await update.message.reply_text(
-            f"{user_profile_url or 'Пользователь'}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!"
+            f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!"
         )
 
 # Добавление хэндлера для команды /venom
