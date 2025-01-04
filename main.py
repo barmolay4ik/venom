@@ -167,12 +167,17 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         for i, (db_user_id, total) in enumerate(top_users, start=1):
             cursor.execute("SELECT username FROM users WHERE user_id = %s", (db_user_id,))
             user_info = cursor.fetchone()
-            username = user_info[0]  # Используем username
-            top_list += f"{i}|<b>{username}</b> — {total}%\n"  # Отображаем ник в жирном шрифте
 
-            # Проверяем, если текущий пользователь в топе
-            if db_user_id == user_id:
-                position = i
+            # Проверка, существует ли username
+            if user_info:
+                username = user_info[0]  # Используем username
+                top_list += f"{i}|<b>{username}</b> — {total}%\n"  # Отображаем ник в жирном шрифте
+
+                # Проверяем, если текущий пользователь в топе
+                if db_user_id == user_id:
+                    position = i
+            else:
+                logging.warning(f"Пользователь с ID {db_user_id} не найден в базе данных.")
 
         # Если пользователя нет в топе, выводим "10+" в позиции
         if position is None or position > 10:
@@ -187,6 +192,7 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception as e:
         logging.error(f"Ошибка в команде /top: {e}")
         await update.message.reply_text("Произошла ошибка при получении топа. Попробуйте снова позже.")
+
 
 
 
