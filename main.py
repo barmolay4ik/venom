@@ -68,7 +68,8 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         hours, remainder = divmod(remaining_time.seconds, 3600)
         minutes, _ = divmod(remainder, 60)
         await update.message.reply_text(
-            f"{user_mention} ты уже играл.\nСейчас ты venom на {total}%\nСледующая попытка завтра!"
+            f"{user_mention}, ты уже играл.\nСейчас ты venom на {total}%\nСледующая попытка завтра!",
+            parse_mode="HTML"
         )
         return
 
@@ -86,10 +87,11 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Проверка на достижение 100%
     if new_total >= 100:
-        await update.message.reply_text(f"{user_mention}, ТЫ VENOM!")
+        await update.message.reply_text(f"{user_mention}, ТЫ VENOM!", parse_mode="HTML")
     else:
         await update.message.reply_text(
-            f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!"
+            f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value})\nСледующая попытка завтра!",
+            parse_mode="HTML"
         )
 
 # Добавление хэндлера для команды /venom
