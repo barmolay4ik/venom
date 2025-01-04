@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 # Хэндлер команды /venom
-# Хэндлер команды /venom
 async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     first_name = update.effective_user.first_name
@@ -70,7 +69,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         target_time = now.replace(hour=14, minute=0, second=0, microsecond=0)
 
         # Инициализация переменной для позиции
-        position = None
+        position = "Не в топе"  # Инициализация по умолчанию
 
         # Если last_used до 14:00, то сбрасываем кулдаун и разрешаем пользователю выполнить команду
         if last_used and last_used < target_time:
@@ -101,17 +100,15 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     user_rank = user[2]  # Индекс 2 - это место пользователя
                     break
 
-            # Если пользователь не в топ-10, выводим "Не в топе"
-            if user_rank is None or user_rank > 10:
-                position = "Не в топе"
-            else:
-                position = user_rank
+            # Если пользователь в топе, обновляем позицию
+            if user_rank and user_rank <= 10:
+                position = f"{user_rank}-е место"
 
             # Отправляем сообщение с новым значением
             await update.message.reply_text(
                 f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value}).\n"
                 f"Сейчас ты venom на {new_total}%. \n"
-                f"Ты занимаешь {position} место в топе.\n"
+                f"Ты занимаешь {position} в топе.\n"
                 "Следующая попытка завтра!",
                 parse_mode="HTML"
             )
@@ -155,17 +152,15 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                         user_rank = user[2]  # Индекс 2 - это место пользователя
                         break
 
-                # Если пользователь не в топ-10, выводим "Не в топе"
-                if user_rank is None or user_rank > 10:
-                    position = "Не в топе"
-                else:
-                    position = user_rank
+                # Если пользователь в топе, обновляем позицию
+                if user_rank and user_rank <= 10:
+                    position = f"{user_rank}-е место"
 
                 # Отправляем сообщение с новым значением
                 await update.message.reply_text(
                     f"{user_mention}, ты стал VENOMОМ на {new_total}% (+{added_value}).\n"
                     f"Сейчас ты venom на {new_total}%. \n"
-                    f"Ты занимаешь {position} место в топе.\n"
+                    f"Ты занимаешь {position} в топе.\n"
                     "Следующая попытка завтра!",
                     parse_mode="HTML"
                 )
@@ -173,6 +168,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.rollback()  # Откат транзакции при ошибке
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
+
 
 
 
