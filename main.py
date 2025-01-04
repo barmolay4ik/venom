@@ -154,31 +154,31 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_mention = f"<a href='tg://user?id={user_id}'>Твой профиль</a>"
     
     try:
-        # Получаем всех пользователей из базы данных и сортируем по total (в убывающем порядке)
-        cursor.execute("SELECT user_id, total, username FROM users ORDER BY total DESC LIMIT 10")
+        # Проверка на наличие столбца username в таблице, если его нет, используем только user_id и total
+        cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC LIMIT 10")
         top_users = cursor.fetchall()
 
         # Если в топе меньше 10 пользователей, выводим всех
         if len(top_users) < 10:
             await update.message.reply_text(
                 "Топ веномов:\n\n" +
-                "\n".join([f"{i+1}|**{username}** — {total}%" for i, (user_id, total, username) in enumerate(top_users)]),
+                "\n".join([f"{i+1}|**{user_id}** — {total}%" for i, (user_id, total) in enumerate(top_users)]),
                 parse_mode="HTML"
             )
         else:
             # Если пользователей больше или равно 10, выводим только 10
             await update.message.reply_text(
                 "Топ веномов:\n\n" +
-                "\n".join([f"{i+1}|**{username}** — {total}%" for i, (user_id, total, username) in enumerate(top_users)]),
+                "\n".join([f"{i+1}|**{user_id}** — {total}%" for i, (user_id, total) in enumerate(top_users)]),
                 parse_mode="HTML"
             )
 
         # Позиция пользователя в топе
-        cursor.execute("SELECT total, username FROM users WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT total FROM users WHERE user_id = %s", (user_id,))
         user_info = cursor.fetchone()
         
         if user_info:
-            user_total, username = user_info
+            user_total = user_info[0]
             cursor.execute("SELECT user_id, total FROM users ORDER BY total DESC")
             top_users = cursor.fetchall()
 
@@ -196,6 +196,7 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.reply_text(f"{user_mention}, ты не зарегистрирован в системе. Используй команду /venom, чтобы начать!")
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при получении топа: {str(e)}")
+
 
 
 
