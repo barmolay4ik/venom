@@ -43,13 +43,13 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 # Хэндлер команды /venom
+# Хэндлер команды /venom
 async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     first_name = update.effective_user.first_name
-    username = update.effective_user.username
 
-    # Используем first_name, если оно есть, иначе используем username
-    user_mention = f"<a href='tg://user?id={user_id}'>{first_name}</a>" if first_name else f"<a href='tg://user?id={user_id}'>{username}</a>"
+    # Используем first_name для упоминания
+    user_mention = f"<a href='tg://user?id={user_id}'>{first_name}</a>" if first_name else f"<a href='tg://user?id={user_id}'>{user_id}</a>"
 
     try:
         # Извлекаем данные пользователя из базы данных
@@ -58,8 +58,8 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         # Если пользователя нет в базе данных, добавляем его
         if result is None:
-            cursor.execute("INSERT INTO users (user_id, username, total, last_used) VALUES (%s, %s, 0, %s)", 
-                           (user_id, username, datetime.now()))
+            cursor.execute("INSERT INTO users (user_id, username, total, last_used) VALUES (%s, NULL, 0, %s)", 
+                           (user_id, datetime.now()))
             conn.commit()
             total, last_used = 0, None
         else:
@@ -149,6 +149,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.rollback()  # Откат транзакции при ошибке
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
+
 
 # Хэндлер команды /top
 async def top(update, context):
