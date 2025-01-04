@@ -94,7 +94,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
             # Если пользователь не в топ-10, выводим "10+" в позиции
             if position is None or position > 10:
-                position = "10+"
+                position = "test"  # Заменено на "test"
 
             # Отправляем сообщение с новым значением
             await update.message.reply_text(
@@ -138,7 +138,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
                 # Если пользователь не в топ-10, выводим "10+" в позиции
                 if position is None or position > 10:
-                    position = "10+"
+                    position = "test"  # Заменено на "test"
 
                 # Отправляем сообщение с новым значением
                 await update.message.reply_text(
@@ -152,6 +152,7 @@ async def venom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.rollback()  # Откат транзакции при ошибке
         logging.error(f"Ошибка при обработке команды /venom: {e}")
         await update.message.reply_text("Произошла ошибка при обработке вашей команды. Попробуйте позже.")
+
 
 
 
